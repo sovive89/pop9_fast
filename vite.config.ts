@@ -15,12 +15,12 @@ export default defineConfig({
         registerType: "autoUpdate",
         includeAssets: ["favicon.svg", "favicon.ico", "robots.txt"],
         manifest: {
-          name: "FastBar",
-          short_name: "FastBar",
+          name: "Pop9 Fast",
+          short_name: "Pop9 Fast",
           start_url: "/equipe",
           display: "standalone",
-          theme_color: "#d4a017",
-          background_color: "#0a0a0a",
+          theme_color: "#8f3cdc",
+          background_color: "#0a080c",
           scope: "/",
           icons: [
             { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
