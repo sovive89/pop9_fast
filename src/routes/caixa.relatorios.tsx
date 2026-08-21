@@ -24,7 +24,7 @@ const SegmentDistributionChart = lazy(() =>
 export const Route = createFileRoute("/caixa/relatorios")({
   head: () => ({
     meta: [
-      { title: "Relatórios Vendas | FastBar" },
+      { title: "Relatórios Vendas | Pop9 Fast" },
       {
         name: "description",
         content: "Faturamento, ticket médio, produtos mais vendidos e formas de pagamento.",
@@ -161,7 +161,7 @@ function Reports() {
               <p className="mt-1 text-lg font-bold">{brl(overview.totalRevenue)}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Comandas pagas</p>
+              <p className="text-xs text-muted-foreground">Lançamentos pagos</p>
               <p className="mt-1 text-lg font-bold">{overview.paidSessionsCount}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
@@ -214,7 +214,7 @@ function Reports() {
               <p className="mt-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-2.5 text-xs text-muted-foreground">
                 🎁 {brl(overview.crmDiscountTotal)} em desconto de boas-vindas do CRM, em{" "}
                 {overview.crmDiscountSessions}{" "}
-                {overview.crmDiscountSessions === 1 ? "comanda" : "comandas"} — já saiu do dinheiro
+                {overview.crmDiscountSessions === 1 ? "lançamento" : "lançamentos"} — já saiu do dinheiro
                 que entrou no caixa, mas não mexe no CMV/margem acima (é custo de aquisição de
                 cliente, não do produto).
               </p>
@@ -271,14 +271,14 @@ function Reports() {
 
           {/* Cruza segmento com dinheiro: "quantos clientes" já tava acima, isso mostra quem
               sustenta o caixa em R$ — cliente novo pode ser maioria em contagem e minoria em
-              faturamento, ou o contrário. Comanda de balcão não entra, não tem cliente pra somar. */}
+              faturamento, ou o contrário. Lançamento de balcão não entra, não tem cliente pra somar. */}
           <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-sm font-semibold">Faturamento por segmento</p>
             <Suspense fallback={<div className="mt-3 h-24" />}>
               <SegmentDistributionChart
                 values={overview.revenueBySegment}
                 formatValue={brl}
-                emptyLabel="Sem comandas de cliente cadastrado nesse período."
+                emptyLabel="Sem lançamentos de cliente cadastrado nesse período."
               />
             </Suspense>
           </div>
@@ -287,7 +287,7 @@ function Reports() {
             <p className="text-sm font-semibold">Faturamento por dia</p>
             {chartData.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                Nenhuma comanda paga nesse período.
+                Nenhum lançamento pago nesse período.
               </p>
             ) : (
               <div className="mt-3 h-48">

@@ -52,7 +52,7 @@ export function TabItemList({
           {onRemove && confirmingId === item.id && (
             <div className="mt-2">
               <PasswordConfirm
-                message={`Remover "${item.name}" da comanda? Confirme com a senha da equipe.`}
+                message={`Remover "${item.name}" do lançamento? Confirme com a senha da equipe.`}
                 confirmLabel="Remover"
                 onCancel={() => setConfirmingId(null)}
                 onConfirm={async (password) => {

@@ -30,15 +30,15 @@ type OverviewItem = {
 export const Route = createFileRoute("/caixa/")({
   head: () => ({
     meta: [
-      { title: "Caixa | Comandas do FastBar" },
+      { title: "Caixa | Lançamentos do Pop9 Fast" },
       {
         name: "description",
-        content: "Localize comandas por nome ou celular, lance bebidas e feche a conta.",
+        content: "Localize lançamentos por nome ou celular, lance itens e feche a conta.",
       },
-      { property: "og:title", content: "Caixa | Comandas do FastBar" },
+      { property: "og:title", content: "Caixa | Lançamentos do Pop9 Fast" },
       {
         property: "og:description",
-        content: "Comandas abertas, busca rápida e fechamento pelo caixa.",
+        content: "Lançamentos abertos, busca rápida e fechamento pelo caixa.",
       },
     ],
   }),
@@ -73,8 +73,8 @@ function RegisterList() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Abertura pela equipe (sem QR) e comanda de balcão. Campos próprios, fora do `confirming`
-  // genérico, porque aqui não é confirmar uma ação numa comanda que já existe — é criar uma.
+  // Abertura pela equipe (sem QR) e lançamento de balcão. Campos próprios, fora do `confirming`
+  // genérico, porque aqui não é confirmar uma ação num lançamento que já existe — é criar um.
   const [opening, setOpening] = useState<null | "manual" | "walkin">(null);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
@@ -156,7 +156,7 @@ function RegisterList() {
       !session.archived_at && ["closed", "paid", "cancelled"].includes(session.status),
   ).length;
 
-  /** Abre e já leva pra comanda: quem abre quer lançar em seguida, não voltar pra lista. */
+  /** Abre e já leva pro lançamento: quem abre quer lançar em seguida, não voltar pra lista. */
   async function confirmOpenManual(password: string) {
     const result = await openManual({ data: { name: newName, phone: newPhone, password } });
     if (result.ok) {
@@ -197,7 +197,7 @@ function RegisterList() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Caixa</p>
-          <h1 className="mt-1 text-3xl font-bold">Comandas</h1>
+          <h1 className="mt-1 text-3xl font-bold">Lançamentos</h1>
         </div>
         <div className="text-right text-sm">
           <p className="text-muted-foreground">{openSessions.length} abertas</p>
@@ -215,7 +215,7 @@ function RegisterList() {
           }}
           className="h-11 flex-1 rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-soft"
         >
-          {opening === "manual" ? "Cancelar" : "+ Abrir comanda"}
+          {opening === "manual" ? "Cancelar" : "+ Abrir lançamento"}
         </button>
         <button
           onClick={() => {
@@ -224,16 +224,16 @@ function RegisterList() {
           }}
           className="h-11 flex-1 rounded-xl border border-border text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          {opening === "walkin" ? "Cancelar" : "Comanda balcão"}
+          {opening === "walkin" ? "Cancelar" : "Lançamento balcão"}
         </button>
       </div>
 
       {opening === "manual" && (
         <div className="mt-3 space-y-3 rounded-2xl border border-border bg-card p-4">
-          <p className="text-sm font-semibold">Abrir comanda sem QR code</p>
+          <p className="text-sm font-semibold">Abrir lançamento</p>
           <p className="text-xs text-muted-foreground">
-            Gera tudo igual ao QR code — cliente no cadastro e link de acompanhamento. Muda só quem
-            digita. Se esse celular já tiver comanda em andamento, você vai direto pra ela.
+            Cadastra o cliente e abre o lançamento. Se esse celular já tiver um em andamento, você
+            vai direto pra ele.
           </p>
           <input
             value={newName}
@@ -251,8 +251,8 @@ function RegisterList() {
             className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base outline-none placeholder:text-muted-foreground focus:border-ring"
           />
           <PasswordConfirm
-            message="Confirme com a senha da equipe para abrir a comanda."
-            confirmLabel="Abrir comanda"
+            message="Confirme com a senha da equipe para abrir o lançamento."
+            confirmLabel="Abrir lançamento"
             onCancel={() => setOpening(null)}
             onConfirm={confirmOpenManual}
           />
@@ -262,7 +262,7 @@ function RegisterList() {
       {opening === "walkin" && (
         <div className="mt-3 rounded-2xl border border-border bg-card p-4">
           <PasswordConfirm
-            message="Abrir a comanda de balcão do dia? Ela registra produto, estoque e faturamento como qualquer outra — só não fica relacionada a nenhum cliente. Se a de hoje já estiver aberta, você vai direto pra ela."
+            message="Abrir o lançamento de balcão do dia? Ele registra produto, estoque e faturamento como qualquer outro — só não fica relacionado a nenhum cliente. Se o de hoje já estiver aberto, você vai direto pra ele."
             confirmLabel="Abrir balcão"
             onCancel={() => setOpening(null)}
             onConfirm={confirmOpenWalkIn}
@@ -307,7 +307,7 @@ function RegisterList() {
 
       {confirming?.kind === "archiveAll" && (
         <ConfirmBar
-          message={`Tirar ${archivableCount} comandas fechadas/pagas/canceladas da lista? Nada é apagado — elas continuam contando no faturamento (quando aplicável) e você pode revê-las em "Arquivadas".`}
+          message={`Tirar ${archivableCount} lançamentos fechados/pagos/cancelados da lista? Nada é apagado — eles continuam contando no faturamento (quando aplicável) e você pode revê-los em "Arquivadas".`}
           confirmLabel="Arquivar"
           busy={busy}
           onCancel={() => setConfirming(null)}
@@ -317,7 +317,7 @@ function RegisterList() {
 
       {filtered.length === 0 ? (
         <p className="mt-6 rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-          Nenhuma comanda encontrada.
+          Nenhum lançamento encontrado.
         </p>
       ) : (
         <ul className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -331,7 +331,7 @@ function RegisterList() {
             const isClosed = session.status === "closed";
             const isArchived = Boolean(session.archived_at);
             const canArchive = !isArchived && (isClosed || isPaid || isCancelled);
-            // Comanda cancelada que ainda tem lançamentos é um cancelamento que travou antes de
+            // Lançamento cancelado que ainda tem itens é um cancelamento que travou antes de
             // devolver tudo ao estoque. Oferecer a ação de novo é o que permite terminá-lo — o
             // servidor trata a repetição como retomada, não como novo cancelamento.
             const cancelStalled = isCancelled && sessionItems.length > 0;
@@ -425,7 +425,7 @@ function RegisterList() {
                                         })
                                       }
                                       className="text-xs text-muted-foreground transition-colors hover:text-destructive"
-                                      title="Cancelar este lançamento"
+                                      title="Cancelar este item"
                                     >
                                       Cancelar
                                     </button>
@@ -435,7 +435,7 @@ function RegisterList() {
                               {confirming?.kind === "removeItem" && confirming.itemId === item.id && (
                                 <div className="mt-2">
                                   <PasswordConfirm
-                                    message={`Remover "${item.name}" da comanda? Confirme com a senha da equipe.`}
+                                    message={`Remover "${item.name}" do lançamento? Confirme com a senha da equipe.`}
                                     confirmLabel="Remover"
                                     onCancel={() => setConfirming(null)}
                                     onConfirm={async (password) => {
@@ -459,7 +459,7 @@ function RegisterList() {
                       {confirming?.kind === "clear" && confirming.sessionId === session.id && (
                         <div className="mt-4">
                           <PasswordConfirm
-                            message="Zerar todos os lançamentos? A comanda continua aberta e o estoque volta. Confirme com a senha da equipe."
+                            message="Zerar todos os itens? O lançamento continua aberto e o estoque volta. Confirme com a senha da equipe."
                             confirmLabel="Zerar"
                             onCancel={() => setConfirming(null)}
                             onConfirm={async (password) => {
@@ -481,10 +481,10 @@ function RegisterList() {
                           <PasswordConfirm
                             message={
                               cancelStalled
-                                ? "Esta comanda foi cancelada, mas sobraram lançamentos sem voltar ao estoque. Confirme com a senha da equipe para terminar de devolver."
-                                : "Cancelar esta comanda inteira? O estoque lançado volta e ela não entra no faturamento. Confirme com a senha da equipe."
+                                ? "Este lançamento foi cancelado, mas sobraram itens sem voltar ao estoque. Confirme com a senha da equipe para terminar de devolver."
+                                : "Cancelar este lançamento inteiro? O estoque lançado volta e ele não entra no faturamento. Confirme com a senha da equipe."
                             }
-                            confirmLabel={cancelStalled ? "Concluir cancelamento" : "Cancelar comanda"}
+                            confirmLabel={cancelStalled ? "Concluir cancelamento" : "Cancelar lançamento"}
                             onCancel={() => setConfirming(null)}
                             onConfirm={async (password) => {
                               const result = await cancelOne({
@@ -503,7 +503,7 @@ function RegisterList() {
                       {confirming?.kind === "undoLast" && confirming.sessionId === session.id && (
                         <div className="mt-4">
                           <PasswordConfirm
-                            message="Desfazer o último lançamento? O estoque volta. Confirme com a senha da equipe."
+                            message="Desfazer o último item? O estoque volta. Confirme com a senha da equipe."
                             confirmLabel="Desfazer"
                             onCancel={() => setConfirming(null)}
                             onConfirm={async (password) => {
@@ -529,7 +529,7 @@ function RegisterList() {
                             params={{ sessionId: session.id }}
                             className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground"
                           >
-                            Abrir comanda
+                            Abrir lançamento
                           </Link>
                           {isOpen && sessionItems.length > 0 && (
                             <>
@@ -556,7 +556,7 @@ function RegisterList() {
                               }
                               className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
                             >
-                              {cancelStalled ? "Concluir cancelamento" : "Cancelar comanda"}
+                              {cancelStalled ? "Concluir cancelamento" : "Cancelar lançamento"}
                             </button>
                           )}
                           {isArchived && (

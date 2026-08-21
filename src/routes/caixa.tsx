@@ -29,7 +29,7 @@ function RegisterLayout() {
           ? "relatorios"
           : pathname.startsWith("/caixa/alertas")
             ? "alertas"
-            : "comandas";
+            : "lancamentos";
 
   const tabClass = (tab: string) =>
     `rounded-full px-4 py-1.5 text-sm font-medium ${active === tab ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`;
@@ -38,8 +38,8 @@ function RegisterLayout() {
     <div>
       <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-4 px-5 pt-5">
         <div className="flex gap-2 overflow-x-auto">
-          <Link to="/caixa" className={tabClass("comandas")}>
-            Comandas
+          <Link to="/caixa" className={tabClass("lancamentos")}>
+            Lançamentos
           </Link>
           <Link to="/caixa/cardapio" className={tabClass("cardapio")}>
             Cardápio

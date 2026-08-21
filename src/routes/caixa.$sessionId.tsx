@@ -22,15 +22,15 @@ import type { BarProduct } from "@/types/fastbar";
 export const Route = createFileRoute("/caixa/$sessionId")({
   head: () => ({
     meta: [
-      { title: "Detalhe da comanda | Caixa FastBar" },
+      { title: "Detalhe do lançamento | Caixa Pop9 Fast" },
       {
         name: "description",
-        content: "Lance bebidas, feche a comanda e registre o pagamento do cliente.",
+        content: "Lance itens, feche o lançamento e registre o pagamento do cliente.",
       },
-      { property: "og:title", content: "Detalhe da comanda | Caixa FastBar" },
+      { property: "og:title", content: "Detalhe do lançamento | Caixa Pop9 Fast" },
       {
         property: "og:description",
-        content: "Lançamento de bebidas, fechamento e pagamento da comanda.",
+        content: "Lançamento de itens, fechamento e pagamento.",
       },
     ],
   }),
@@ -55,7 +55,7 @@ function RegisterTabDetail() {
 
   useEffect(() => {
     void fetchProducts().then(setProducts);
-    // Sem isso, um produto criado depois que essa comanda já estava aberta na tela nunca
+    // Sem isso, um produto criado depois que esse lançamento já estava aberto na tela nunca
     // aparecia pra lançar — a lista só carregava uma vez, no primeiro acesso à página.
     const poll = setInterval(() => void fetchProducts().then(setProducts), 15000);
     return () => clearInterval(poll);
@@ -73,15 +73,15 @@ function RegisterTabDetail() {
   }
 
   if (loading) {
-    return <p className="p-6 text-sm text-muted-foreground">Carregando comanda...</p>;
+    return <p className="p-6 text-sm text-muted-foreground">Carregando lançamento...</p>;
   }
 
   if (!session) {
     return (
       <main className="mx-auto max-w-2xl p-6">
-        <h1 className="text-2xl font-bold">Comanda não encontrada</h1>
+        <h1 className="text-2xl font-bold">Lançamento não encontrado</h1>
         <Link to="/caixa" className="mt-4 inline-block text-sm text-primary underline">
-          Voltar às comandas
+          Voltar aos lançamentos
         </Link>
       </main>
     );
@@ -93,7 +93,7 @@ function RegisterTabDetail() {
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
       <Link to="/caixa" className="text-sm text-muted-foreground underline underline-offset-4">
-        ← Voltar às comandas
+        ← Voltar aos lançamentos
       </Link>
 
       <div className="mt-4 flex items-start justify-between gap-3">
@@ -109,7 +109,7 @@ function RegisterTabDetail() {
       </div>
 
       <div className="mt-5 rounded-2xl border border-border bg-card p-5">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Total da comanda</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Total do lançamento</p>
         {session.discount_percent ? (
           <>
             <p className="mt-1 text-sm text-muted-foreground line-through">{brl(tabTotal(items))}</p>
@@ -143,7 +143,7 @@ function RegisterTabDetail() {
       )}
 
       <section className="mt-8">
-        <h2 className="text-lg font-semibold">Itens da comanda</h2>
+        <h2 className="text-lg font-semibold">Itens do lançamento</h2>
         <div className="mt-3">
           <TabItemList
             items={items}
@@ -167,7 +167,7 @@ function RegisterTabDetail() {
             disabled={busy}
             className="h-12 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-soft disabled:opacity-60"
           >
-            {busy ? "Confirmando..." : "Confirmar comanda"}
+            {busy ? "Confirmando..." : "Confirmar lançamento"}
           </button>
         )}
 
@@ -177,7 +177,7 @@ function RegisterTabDetail() {
             disabled={busy}
             className="h-12 w-full rounded-xl border border-border text-base font-semibold disabled:opacity-60"
           >
-            Fechar comanda
+            Fechar lançamento
           </button>
         )}
 
@@ -226,7 +226,7 @@ function RegisterTabDetail() {
             disabled={busy}
             className="h-12 w-full rounded-xl border border-border text-sm font-medium text-muted-foreground disabled:opacity-60"
           >
-            Reabrir comanda
+            Reabrir lançamento
           </button>
         )}
       </section>
