@@ -18,11 +18,19 @@ const RPC_MESSAGES: Record<string, string> = {
   invalid_quantity: "Informe uma quantidade válida.",
   product_not_configured:
     "Item sem configuração de estoque — defina no Cardápio (ficha técnica ou uma entrada) antes de vender.",
+  insufficient_stock: "Sem estoque suficiente para vender esse item.",
   has_history:
     "Esse produto já tem histórico de vendas ou movimentos de estoque — não dá pra apagar sem perder rastro. Use 'Remover' pra tirar do cardápio sem apagar o histórico.",
 };
 
-type RpcResult = { ok: boolean; code?: string; removed?: number; new_quantity?: number };
+type RpcResult = {
+  ok: boolean;
+  code?: string;
+  removed?: number;
+  new_quantity?: number;
+  /** Nome do insumo/produto que faltou, devolvido junto de `insufficient_stock`. */
+  component?: string;
+};
 
 /** Normaliza o retorno das funções do banco no formato que a UI já espera. */
 function fromRpc(
@@ -32,6 +40,10 @@ function fromRpc(
 ): { ok: true; removed?: number } | { ok: false; message: string } {
   if (error || !result) return { ok: false, message: fallback };
   if (!result.ok) {
+    // Dizer o que acabou economiza uma ida ao Estoque no meio do movimento.
+    if (result.code === "insufficient_stock" && result.component) {
+      return { ok: false, message: `Sem estoque de ${result.component} para vender esse item.` };
+    }
     return { ok: false, message: RPC_MESSAGES[result.code ?? ""] ?? fallback };
   }
   return result.removed === undefined ? { ok: true } : { ok: true, removed: result.removed };
