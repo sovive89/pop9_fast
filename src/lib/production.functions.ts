@@ -127,7 +127,9 @@ type RegistrarProducaoResult = {
 /** Chama a função do banco -- toda a lógica de validar saldo, debitar e creditar mora lá,
  * atômica, pra produção nunca ficar pela metade se algo falhar no meio. */
 export const registrarProducao = createServerFn({ method: "POST" })
-  .inputValidator((data: { fichaId: string; lotes: number; observacao?: string }) => data)
+  .inputValidator(
+    (data: { fichaId: string; lotes: number; observacao?: string; validade?: string }) => data,
+  )
   .handler(async ({ data }) => {
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
@@ -140,6 +142,7 @@ export const registrarProducao = createServerFn({ method: "POST" })
       p_ficha_id: data.fichaId,
       p_lotes: data.lotes,
       p_observacao: data.observacao?.trim() || null,
+      p_validade: data.validade || null,
     });
     if (error) return { ok: false as const, message: "Não foi possível registrar a produção." };
 

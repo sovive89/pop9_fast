@@ -95,6 +95,7 @@ function ProduzirTab() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [componentes, setComponentes] = useState<Componente[]>([]);
   const [lotes, setLotes] = useState("1");
+  const [validade, setValidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -128,7 +129,9 @@ function ProduzirTab() {
     setBusy(true);
     setError(null);
     setSuccess(null);
-    const result = await registrar({ data: { fichaId: selectedId, lotes: lotesNum } });
+    const result = await registrar({
+      data: { fichaId: selectedId, lotes: lotesNum, validade: validade || undefined },
+    });
     setBusy(false);
     if (!result.ok) {
       setError(result.message);
@@ -138,6 +141,7 @@ function ProduzirTab() {
       `Produzido: ${result.quantidadeProduzida} ${selected?.rendimento_unidade?.codigo ?? ""} · custo ${brl(result.custoTotal)}.`,
     );
     setLotes("1");
+    setValidade("");
     // Recarrega pra refletir o novo estoque do item produzido, se ele mesmo estiver na lista de
     // componentes de outra ficha visualizada em seguida.
     const { fichas: reloaded } = await loadFichas();
@@ -196,8 +200,9 @@ function ProduzirTab() {
       )}
 
       {selected && (
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <TextField label="Lotes" value={lotes} onChange={setLotes} type="number" />
+          <TextField label="Validade (opcional)" value={validade} onChange={setValidade} type="date" />
           <PrimaryButton onClick={() => void handleRegistrar()} disabled={busy || lotesNum <= 0}>
             {busy ? "Registrando..." : "Registrar produção"}
           </PrimaryButton>

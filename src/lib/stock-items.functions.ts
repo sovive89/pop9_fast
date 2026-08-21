@@ -228,3 +228,49 @@ export const deleteEmbalagem = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, message: "Não foi possível apagar a embalagem." };
     return { ok: true as const };
   });
+
+// ============ ENTRADA DE ESTOQUE (cria lote) ============
+
+type RegistrarEntradaResult = { ok: boolean; code?: string; lote_id?: string; quantidade_convertida?: number };
+
+/** Chama a função do banco -- ela converte a unidade, cria o lote (com validade opcional) e
+ * recalcula o custo médio, tudo atômico. */
+export const registrarEntradaEstoque = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      itemId: string;
+      quantidade: number;
+      unidadeId: string;
+      valorPago?: number;
+      validade?: string;
+      fornecedorId?: string;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const { admin, assertRegisterAccess } = await import("./fastbar.server");
+    await assertRegisterAccess();
+
+    if (!Number.isFinite(data.quantidade) || data.quantidade <= 0) {
+      return { ok: false as const, message: "Quantidade inválida." };
+    }
+    if (data.valorPago !== undefined && (!Number.isFinite(data.valorPago) || data.valorPago < 0)) {
+      return { ok: false as const, message: "Valor pago inválido." };
+    }
+
+    const { data: result, error } = await admin().rpc("pop9_fastbar_registrar_entrada_estoque", {
+      p_item_id: data.itemId,
+      p_quantidade: data.quantidade,
+      p_unidade_id: data.unidadeId,
+      p_valor_pago: data.valorPago ?? null,
+      p_validade: data.validade || null,
+      p_fornecedor_id: data.fornecedorId || null,
+    });
+    if (error) return { ok: false as const, message: "Não foi possível registrar a entrada." };
+
+    const r = result as RegistrarEntradaResult;
+    if (!r.ok) {
+      if (r.code === "item_not_found") return { ok: false as const, message: "Item não encontrado." };
+      return { ok: false as const, message: "Não foi possível registrar a entrada." };
+    }
+    return { ok: true as const, quantidadeConvertida: r.quantidade_convertida ?? 0 };
+  });

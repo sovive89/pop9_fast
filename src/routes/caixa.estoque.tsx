@@ -12,6 +12,7 @@ import {
   listEmbalagens,
   listItems,
   listUnidades,
+  registrarEntradaEstoque,
   TIPO_LABELS,
   updateItem,
   type ItemTipo,
@@ -283,12 +284,13 @@ function ItensTab() {
                   onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
                   className="shrink-0 text-xs text-muted-foreground underline"
                 >
-                  {expandedId === item.id ? "Fechar" : "Embalagens"}
+                  {expandedId === item.id ? "Fechar" : "Entrada / Embalagens"}
                 </button>
               </div>
 
               {expandedId === item.id && (
                 <div className="mt-3 space-y-3 border-t border-border pt-3">
+                  <EntradaEstoqueForm itemId={item.id} unidades={unidades} onSaved={reload} />
                   <EmbalagensManager itemId={item.id} unidades={unidades} />
                   <div className="flex gap-3">
                     <button
@@ -319,6 +321,129 @@ function ItensTab() {
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+type SupplierOption = { id: string; name: string };
+
+function EntradaEstoqueForm(props: { itemId: string; unidades: Unidade[]; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [fornecedores, setFornecedores] = useState<SupplierOption[]>([]);
+  const [quantidade, setQuantidade] = useState("");
+  const [unidadeId, setUnidadeId] = useState("");
+  const [valorPago, setValorPago] = useState("");
+  const [validade, setValidade] = useState("");
+  const [fornecedorId, setFornecedorId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const loadFornecedores = useServerFn(listSuppliers);
+  const registrar = useServerFn(registrarEntradaEstoque);
+
+  useEffect(() => {
+    if (!open) return;
+    void loadFornecedores().then((r) => setFornecedores(r.suppliers));
+    if (!unidadeId && props.unidades.length > 0) setUnidadeId(props.unidades[0]!.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  async function handleSubmit() {
+    setError(null);
+    setSuccess(null);
+    const qty = parseAmount(quantidade);
+    if (!qty) {
+      setError("Quantidade inválida.");
+      return;
+    }
+    let valor: number | undefined;
+    if (valorPago.trim()) {
+      const parsed = parseAmount(valorPago);
+      if (!parsed) {
+        setError("Valor pago inválido.");
+        return;
+      }
+      valor = parsed;
+    }
+    setBusy(true);
+    const result = await registrar({
+      data: {
+        itemId: props.itemId,
+        quantidade: qty,
+        unidadeId,
+        valorPago: valor,
+        validade: validade || undefined,
+        fornecedorId: fornecedorId || undefined,
+      },
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setSuccess(`Entrada registrada: +${result.quantidadeConvertida}.`);
+    setQuantidade("");
+    setValorPago("");
+    setValidade("");
+    props.onSaved();
+  }
+
+  return (
+    <div>
+      <button onClick={() => setOpen((v) => !v)} className="text-xs font-semibold text-primary underline">
+        {open ? "Fechar entrada" : "+ Registrar entrada"}
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-2 rounded-xl border border-border p-3">
+          <div className="flex gap-2">
+            <TextField label="Quantidade" value={quantidade} onChange={setQuantidade} type="number" />
+            <label className="block">
+              <span className="text-xs font-medium text-muted-foreground">Unidade</span>
+              <select
+                value={unidadeId}
+                onChange={(e) => setUnidadeId(e.target.value)}
+                className="mt-1 h-11 rounded-xl border border-border bg-background px-3.5 text-sm outline-none focus:border-ring"
+              >
+                {props.unidades.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.codigo}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <TextField
+            label="Valor pago (opcional)"
+            value={valorPago}
+            onChange={setValorPago}
+            type="number"
+            placeholder="Recalcula o custo médio"
+          />
+          <TextField label="Validade (opcional)" value={validade} onChange={setValidade} type="date" />
+          <label className="block">
+            <span className="text-xs font-medium text-muted-foreground">Fornecedor (opcional)</span>
+            <select
+              value={fornecedorId}
+              onChange={(e) => setFornecedorId(e.target.value)}
+              className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm outline-none focus:border-ring"
+            >
+              <option value="">Nenhum</option>
+              {fornecedores.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          {success && <p className="text-xs text-success">{success}</p>}
+          <PrimaryButton onClick={() => void handleSubmit()} disabled={busy}>
+            {busy ? "Registrando..." : "Registrar entrada"}
+          </PrimaryButton>
+        </div>
       )}
     </div>
   );
