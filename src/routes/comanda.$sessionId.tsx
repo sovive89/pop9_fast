@@ -10,10 +10,9 @@ export const Route = createFileRoute("/comanda/$sessionId")({
       },
     ],
   }),
-  beforeLoad: ({ params }) => {
-    const { sessionId } = params;
-    // Redirect to the new client route preserving sessionId
-    return redirect({ to: `/c/${sessionId}` });
+  beforeLoad: () => {
+    // Pop9 não tem fluxo de cliente — este link antigo agora vai pro acesso da equipe.
+    throw redirect({ to: "/equipe" });
   },
   component: function ComandaRedirect() {
     return null;

@@ -1,8 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useLiveTab } from "@/hooks/use-live-tab";
 import CustomerTabView from "@/features/client/components/CustomerTabView";
 
 export const Route = createFileRoute("/c/$sessionId")({
+  // Pop9 não tem acompanhamento de comanda pelo cliente.
+  beforeLoad: () => {
+    throw redirect({ to: "/equipe" });
+  },
   head: () => ({
     meta: [
       { title: "Minha comanda | FastBar" },

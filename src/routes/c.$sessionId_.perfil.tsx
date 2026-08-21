@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Field } from "@/components/shared/Field";
@@ -11,6 +11,10 @@ import {
 } from "@/lib/client-session.functions";
 
 export const Route = createFileRoute("/c/$sessionId_/perfil")({
+  // Depende do fluxo de cliente por QR code, que o pop9 não tem.
+  beforeLoad: () => {
+    throw redirect({ to: "/equipe" });
+  },
   head: () => ({
     meta: [
       { title: "Só mais um pouquinho | FastBar" },

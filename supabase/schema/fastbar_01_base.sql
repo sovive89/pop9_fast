@@ -1,15 +1,15 @@
 -- ============================================================================
--- pop9 — Parte 1: schema base (mesmos nomes de tabela do fast_bar)
+-- pop9 — Parte 1: tabelas base, com prefixo pop9_
 -- ============================================================================
---  ⚠  RODAR SOMENTE NO PROJETO NOVO, VAZIO.
+--  Roda no MESMO projeto do fast_bar (evjoxkllaaxgxdaupees), porque o plano
+--  Free não permite um segundo projeto. A separação vem do prefixo:
 --
---  Os nomes de tabela aqui são IDÊNTICOS aos do fast_bar em produção
---  (projeto evjoxkllaaxgxdaupees). Isso é intencional — deixa o código da
---  pop9_fast funcionar sem alteração, trocando só as chaves no .env.
+--     fastbar_products       -> fast_bar, produção   (NÃO é tocado aqui)
+--     pop9_fastbar_products  -> pop9, food truck
 --
---  Consequência: confira o projeto selecionado no canto superior do painel
---  antes de rodar. Os comandos são `create table if not exists`, então num
---  banco já povoado eles não destroem nada — mas também não é onde devem ir.
+--  Nenhum comando deste arquivo altera, lê ou apaga tabela de produção. Todo
+--  objeto criado — tabela, índice, constraint — começa com `pop9_`, inclusive
+--  os índices, que precisam de nome único no schema e colidiriam sem isso.
 -- ============================================================================
 -- Reconstruído a partir de duas fontes, porque as tabelas fastbar_* nunca foram
 -- criadas por migration (foram feitas direto no painel do Supabase):
@@ -29,7 +29,7 @@
 begin;
 
 -- ---------------------------------------------------------------- fornecedores
-create table if not exists public.fastbar_suppliers (
+create table if not exists public.pop9_fastbar_suppliers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   document text,
@@ -40,7 +40,7 @@ create table if not exists public.fastbar_suppliers (
 );
 
 -- -------------------------------------------------------------------- clientes
-create table if not exists public.fastbar_customers (
+create table if not exists public.pop9_fastbar_customers (
   id uuid primary key default gen_random_uuid(),
   phone text not null,
   name text not null,
@@ -61,32 +61,32 @@ create table if not exists public.fastbar_customers (
   marketing_opt_in boolean not null default false,
   profile_completed_at timestamptz,
   welcome_discount_earned_at timestamptz,
-  constraint fastbar_customers_birthday_day_valid
+  constraint pop9_fastbar_customers_birthday_day_valid
     check (birthday_day is null or (birthday_day between 1 and 31)),
-  constraint fastbar_customers_birthday_month_valid
+  constraint pop9_fastbar_customers_birthday_month_valid
     check (birthday_month is null or (birthday_month between 1 and 12)),
   -- Dia e mês andam juntos: um sem o outro é aniversário pela metade.
-  constraint fastbar_customers_birthday_complete
+  constraint pop9_fastbar_customers_birthday_complete
     check ((birthday_day is null) = (birthday_month is null))
 );
 
-create index if not exists fastbar_customers_birthday_idx
-  on public.fastbar_customers (birthday_month, birthday_day);
-create index if not exists fastbar_customers_marketing_opt_in_idx
-  on public.fastbar_customers (marketing_opt_in);
+create index if not exists pop9_fastbar_customers_birthday_idx
+  on public.pop9_fastbar_customers (birthday_month, birthday_day);
+create index if not exists pop9_fastbar_customers_marketing_opt_in_idx
+  on public.pop9_fastbar_customers (marketing_opt_in);
 
 -- ------------------------------------------------------------ categorias
-create table if not exists public.fastbar_product_categories (
+create table if not exists public.pop9_fastbar_product_categories (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   created_at timestamptz not null default now()
 );
 
-create unique index if not exists fastbar_product_categories_name_ci_key
-  on public.fastbar_product_categories (lower(name));
+create unique index if not exists pop9_fastbar_product_categories_name_ci_key
+  on public.pop9_fastbar_product_categories (lower(name));
 
 -- -------------------------------------------------------------------- produtos
-create table if not exists public.fastbar_products (
+create table if not exists public.pop9_fastbar_products (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   category text not null,
@@ -102,15 +102,15 @@ create table if not exists public.fastbar_products (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint fastbar_products_units_per_pack_positive check (units_per_pack > 0),
-  constraint fastbar_products_content_amount_positive check (content_amount > 0)
+  constraint pop9_fastbar_products_units_per_pack_positive check (units_per_pack > 0),
+  constraint pop9_fastbar_products_content_amount_positive check (content_amount > 0)
 );
 
 -- --------------------------------------------------- insumos (as duas tabelas)
 -- base_drinks e drink_ingredients são idênticas coluna a coluna. A duplicação vem
 -- do domínio de bar (destilado vs. resto) e está replicada aqui só para o espelho
 -- continuar fiel — a Parte 2 introduz o item unificado que as substitui.
-create table if not exists public.fastbar_base_drinks (
+create table if not exists public.pop9_fastbar_base_drinks (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   unit text not null,
@@ -123,12 +123,12 @@ create table if not exists public.fastbar_base_drinks (
   active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint fastbar_base_drinks_units_per_pack_positive check (units_per_pack > 0),
-  constraint fastbar_base_drinks_content_amount_positive
+  constraint pop9_fastbar_base_drinks_units_per_pack_positive check (units_per_pack > 0),
+  constraint pop9_fastbar_base_drinks_content_amount_positive
     check (content_amount > 0 and content_amount < 1000000)
 );
 
-create table if not exists public.fastbar_drink_ingredients (
+create table if not exists public.pop9_fastbar_drink_ingredients (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   unit text not null,
@@ -141,34 +141,34 @@ create table if not exists public.fastbar_drink_ingredients (
   active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint fastbar_drink_ingredients_units_per_pack_positive check (units_per_pack > 0),
-  constraint fastbar_drink_ingredients_content_amount_positive
+  constraint pop9_fastbar_drink_ingredients_units_per_pack_positive check (units_per_pack > 0),
+  constraint pop9_fastbar_drink_ingredients_content_amount_positive
     check (content_amount > 0 and content_amount < 1000000)
 );
 
 -- -------------------------------------------------------------- ficha técnica
-create table if not exists public.fastbar_recipe_items (
+create table if not exists public.pop9_fastbar_recipe_items (
   id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.fastbar_products(id) on delete cascade,
-  base_drink_id uuid references public.fastbar_base_drinks(id),
-  ingredient_id uuid references public.fastbar_drink_ingredients(id),
+  product_id uuid not null references public.pop9_fastbar_products(id) on delete cascade,
+  base_drink_id uuid references public.pop9_fastbar_base_drinks(id),
+  ingredient_id uuid references public.pop9_fastbar_drink_ingredients(id),
   quantity numeric not null,
   -- ADIÇÃO ao original: a regra "preencha exatamente um" existe hoje só como convenção,
   -- e todo código de estoque depende dela. Aqui ela vira garantia do banco.
-  constraint fastbar_recipe_items_exactly_one_component
+  constraint pop9_fastbar_recipe_items_exactly_one_component
     check (num_nonnulls(base_drink_id, ingredient_id) = 1)
 );
 
-create index if not exists fastbar_recipe_items_product_idx
-  on public.fastbar_recipe_items (product_id);
+create index if not exists pop9_fastbar_recipe_items_product_idx
+  on public.pop9_fastbar_recipe_items (product_id);
 
 -- -------------------------------------------------------------------- comandas
-create table if not exists public.fastbar_sessions (
+create table if not exists public.pop9_fastbar_sessions (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
   phone text not null,
   status text not null default 'pending',
-  customer_id uuid references public.fastbar_customers(id),
+  customer_id uuid references public.pop9_fastbar_customers(id),
   discount_percent numeric(5,2) not null default 0,
   started_at timestamptz,
   closed_at timestamptz,
@@ -177,36 +177,36 @@ create table if not exists public.fastbar_sessions (
   payment_method text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint fastbar_sessions_status_check
+  constraint pop9_fastbar_sessions_status_check
     check (status in ('pending', 'open', 'closed', 'paid', 'cancelled')),
-  constraint fastbar_sessions_discount_percent_valid
+  constraint pop9_fastbar_sessions_discount_percent_valid
     check (discount_percent >= 0 and discount_percent <= 100)
 );
 
-create index if not exists fastbar_sessions_archived_at_idx
-  on public.fastbar_sessions (archived_at);
-create index if not exists fastbar_sessions_status_idx
-  on public.fastbar_sessions (status, started_at desc);
+create index if not exists pop9_fastbar_sessions_archived_at_idx
+  on public.pop9_fastbar_sessions (archived_at);
+create index if not exists pop9_fastbar_sessions_status_idx
+  on public.pop9_fastbar_sessions (status, started_at desc);
 
-create table if not exists public.fastbar_tab_items (
+create table if not exists public.pop9_fastbar_tab_items (
   id uuid primary key default gen_random_uuid(),
-  session_id uuid not null references public.fastbar_sessions(id) on delete cascade,
-  product_id uuid references public.fastbar_products(id),
+  session_id uuid not null references public.pop9_fastbar_sessions(id) on delete cascade,
+  product_id uuid references public.pop9_fastbar_products(id),
   name text not null,
   unit_price numeric not null,
   quantity integer not null default 1,
   added_at timestamptz not null default now()
 );
 
-create index if not exists fastbar_tab_items_session_idx
-  on public.fastbar_tab_items (session_id, added_at);
+create index if not exists pop9_fastbar_tab_items_session_idx
+  on public.pop9_fastbar_tab_items (session_id, added_at);
 
 -- ------------------------------------------------------------------ movimentos
-create table if not exists public.fastbar_stock_movements (
+create table if not exists public.pop9_fastbar_stock_movements (
   id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.fastbar_products(id) on delete cascade,
-  session_id uuid references public.fastbar_sessions(id) on delete set null,
-  supplier_id uuid references public.fastbar_suppliers(id),
+  product_id uuid not null references public.pop9_fastbar_products(id) on delete cascade,
+  session_id uuid references public.pop9_fastbar_sessions(id) on delete set null,
+  supplier_id uuid references public.pop9_fastbar_suppliers(id),
   quantity numeric not null,
   movement_type text not null,
   note text,
@@ -214,34 +214,34 @@ create table if not exists public.fastbar_stock_movements (
   created_at timestamptz not null default now()
 );
 
-create index if not exists fastbar_stock_movements_product_idx
-  on public.fastbar_stock_movements (product_id, created_at desc);
+create index if not exists pop9_fastbar_stock_movements_product_idx
+  on public.pop9_fastbar_stock_movements (product_id, created_at desc);
 
-create table if not exists public.fastbar_base_drink_movements (
+create table if not exists public.pop9_fastbar_base_drink_movements (
   id uuid primary key default gen_random_uuid(),
-  base_drink_id uuid not null references public.fastbar_base_drinks(id) on delete cascade,
-  supplier_id uuid references public.fastbar_suppliers(id),
+  base_drink_id uuid not null references public.pop9_fastbar_base_drinks(id) on delete cascade,
+  supplier_id uuid references public.pop9_fastbar_suppliers(id),
   type text not null,
   quantity numeric not null,
   reason text not null,
   note text,
   unit_cost numeric,
   created_at timestamptz not null default now(),
-  constraint fastbar_base_drink_movements_reason_check
+  constraint pop9_fastbar_base_drink_movements_reason_check
     check (reason in ('compra', 'venda', 'perda', 'ajuste'))
 );
 
-create table if not exists public.fastbar_drink_ingredient_movements (
+create table if not exists public.pop9_fastbar_drink_ingredient_movements (
   id uuid primary key default gen_random_uuid(),
-  ingredient_id uuid not null references public.fastbar_drink_ingredients(id) on delete cascade,
-  supplier_id uuid references public.fastbar_suppliers(id),
+  ingredient_id uuid not null references public.pop9_fastbar_drink_ingredients(id) on delete cascade,
+  supplier_id uuid references public.pop9_fastbar_suppliers(id),
   type text not null,
   quantity numeric not null,
   reason text not null,
   note text,
   unit_cost numeric,
   created_at timestamptz not null default now(),
-  constraint fastbar_drink_ingredient_movements_reason_check
+  constraint pop9_fastbar_drink_ingredient_movements_reason_check
     check (reason in ('compra', 'venda', 'perda', 'ajuste'))
 );
 
@@ -252,11 +252,11 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'fastbar_suppliers', 'fastbar_customers', 'fastbar_product_categories',
-    'fastbar_products', 'fastbar_base_drinks', 'fastbar_drink_ingredients',
-    'fastbar_recipe_items', 'fastbar_sessions', 'fastbar_tab_items',
-    'fastbar_stock_movements', 'fastbar_base_drink_movements',
-    'fastbar_drink_ingredient_movements'
+    'pop9_fastbar_suppliers', 'pop9_fastbar_customers', 'pop9_fastbar_product_categories',
+    'pop9_fastbar_products', 'pop9_fastbar_base_drinks', 'pop9_fastbar_drink_ingredients',
+    'pop9_fastbar_recipe_items', 'pop9_fastbar_sessions', 'pop9_fastbar_tab_items',
+    'pop9_fastbar_stock_movements', 'pop9_fastbar_base_drink_movements',
+    'pop9_fastbar_drink_ingredient_movements'
   ]
   loop
     execute format('alter table public.%I enable row level security', t);

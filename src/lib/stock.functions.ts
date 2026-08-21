@@ -5,14 +5,14 @@ export const getStockOverview = createServerFn({ method: "POST" }).handler(async
   await assertRegisterAccess();
   const [{ data: products }, { data: recipeLinks }, { data: movementLinks }] = await Promise.all([
     admin()
-      .from("fastbar_products")
+      .from("pop9_fastbar_products")
       .select(
         "id, name, category, price, unit, package_type, is_active, stock_quantity, image_url, purchase_unit, units_per_pack, content_amount, average_cost",
       )
       .order("category")
       .order("name"),
-    admin().from("fastbar_recipe_items").select("product_id"),
-    admin().from("fastbar_stock_movements").select("product_id"),
+    admin().from("pop9_fastbar_recipe_items").select("product_id"),
+    admin().from("pop9_fastbar_stock_movements").select("product_id"),
   ]);
   // Produtos com ficha técnica não têm stock_quantity próprio confiável — quem controla
   // disponibilidade pra eles é o estoque dos componentes (bebidas base/ingredientes), não este campo.
@@ -42,7 +42,7 @@ export const restockProduct = createServerFn({ method: "POST" })
     // O saldo é somado dentro do banco (`set stock_quantity = stock_quantity + n`), junto com o
     // registro do movimento. Ler o saldo aqui e gravar depois perderia uma das entradas se duas
     // reposições acontecessem ao mesmo tempo.
-    const { data: result, error } = await admin().rpc("fastbar_restock_product", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_restock_product", {
       p_product_id: data.productId,
       p_quantity: quantity,
     });
@@ -87,7 +87,7 @@ export const addProductEntry = createServerFn({ method: "POST" })
       return { ok: false as const, message: "Informe uma quantidade válida." };
     }
 
-    const { data: result, error } = await admin().rpc("fastbar_add_product_entry", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_add_product_entry", {
       p_product_id: data.productId,
       p_packs: packs,
       ...(data.purchaseCost !== undefined ? { p_purchase_cost: data.purchaseCost } : {}),

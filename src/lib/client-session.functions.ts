@@ -16,7 +16,7 @@ export const openClientSession = createServerFn({ method: "POST" })
 
     // Mesmo celular já tem comanda em andamento: manda para ela em vez de criar outra.
     const { data: existing } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("id, customer_id")
       .eq("phone", phone)
       .in("status", ["pending", "open"])
@@ -32,7 +32,7 @@ export const openClientSession = createServerFn({ method: "POST" })
     const customerId = await upsertCustomer(name, phone);
 
     const { data: inserted, error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .insert({
         customer_name: name,
         phone,
@@ -54,7 +54,7 @@ async function isProfileCompleted(customerId: string | null) {
   if (!customerId) return false;
   const { admin } = await import("./fastbar.server");
   const { data } = await admin()
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .select("profile_completed_at")
     .eq("id", customerId)
     .maybeSingle();
@@ -162,7 +162,7 @@ export const submitCustomerProfile = createServerFn({ method: "POST" })
     }
 
     const { data: session } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("customer_id")
       .eq("id", data.sessionId)
       .maybeSingle();
@@ -190,7 +190,7 @@ export const submitCustomerProfile = createServerFn({ method: "POST" })
     const earnsDiscount = filledEverything && data.marketingOptIn;
 
     const { data: customer } = await admin()
-      .from("fastbar_customers")
+      .from("pop9_fastbar_customers")
       .select("welcome_discount_earned_at")
       .eq("id", session.customer_id)
       .maybeSingle();
@@ -198,7 +198,7 @@ export const submitCustomerProfile = createServerFn({ method: "POST" })
     const grantDiscount = earnsDiscount && !customer?.welcome_discount_earned_at;
 
     const { error } = await admin()
-      .from("fastbar_customers")
+      .from("pop9_fastbar_customers")
       .update({
         ...profile,
         marketing_opt_in: data.marketingOptIn,
@@ -213,7 +213,7 @@ export const submitCustomerProfile = createServerFn({ method: "POST" })
       // Aplicado depois do cadastro salvar: se o desconto falhar, o cliente não perde os dados
       // que digitou — e o pior caso é ficar sem o abatimento, não com cadastro pela metade.
       await admin()
-        .from("fastbar_sessions")
+        .from("pop9_fastbar_sessions")
         .update({ discount_percent: WELCOME_DISCOUNT_PERCENT })
         .eq("id", data.sessionId);
     }

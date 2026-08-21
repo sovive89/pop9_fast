@@ -40,21 +40,21 @@ export function sanitizePhone(value: unknown) {
 export async function upsertCustomer(name: string, phone: string): Promise<string> {
   const nowIso = new Date().toISOString();
   const { data: existing } = await supabaseAdmin
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .select("id, total_visits")
     .eq("phone", phone)
     .maybeSingle();
 
   if (existing) {
     await supabaseAdmin
-      .from("fastbar_customers")
+      .from("pop9_fastbar_customers")
       .update({ name, last_seen_at: nowIso, total_visits: existing.total_visits + 1 })
       .eq("id", existing.id);
     return existing.id;
   }
 
   const { data: inserted } = await supabaseAdmin
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .insert({ name, phone, total_visits: 1, first_seen_at: nowIso, last_seen_at: nowIso })
     .select("id")
     .single();
@@ -65,14 +65,14 @@ export async function upsertCustomer(name: string, phone: string): Promise<strin
 /** Soma o consumo da comanda paga no total histórico do cliente. */
 export async function registerCustomerSpend(sessionId: string) {
   const { data: session } = await supabaseAdmin
-    .from("fastbar_sessions")
+    .from("pop9_fastbar_sessions")
     .select("customer_id, discount_percent")
     .eq("id", sessionId)
     .maybeSingle();
   if (!session?.customer_id) return;
 
   const { data: items } = await supabaseAdmin
-    .from("fastbar_tab_items")
+    .from("pop9_fastbar_tab_items")
     .select("unit_price, quantity")
     .eq("session_id", sessionId);
 
@@ -84,14 +84,14 @@ export async function registerCustomerSpend(sessionId: string) {
   if (total <= 0) return;
 
   const { data: customer } = await supabaseAdmin
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .select("total_spent")
     .eq("id", session.customer_id)
     .maybeSingle();
   if (!customer) return;
 
   await supabaseAdmin
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .update({ total_spent: Number(customer.total_spent) + total })
     .eq("id", session.customer_id);
 }

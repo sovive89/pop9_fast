@@ -45,7 +45,7 @@ export const listSuppliers = createServerFn({ method: "POST" }).handler(async ()
   const { admin, assertRegisterAccess } = await import("./fastbar.server");
   await assertRegisterAccess();
   const { data } = await admin()
-    .from("fastbar_suppliers")
+    .from("pop9_fastbar_suppliers")
     .select("id, name, document, phone, active")
     .eq("active", true)
     .order("name");
@@ -59,7 +59,7 @@ export const createSupplier = createServerFn({ method: "POST" })
     await assertRegisterAccess();
     const name = data.name.trim();
     if (name.length < 2) return { ok: false as const, message: "Nome do fornecedor inválido." };
-    const { error } = await admin().from("fastbar_suppliers").insert({
+    const { error } = await admin().from("pop9_fastbar_suppliers").insert({
       name,
       document: data.document?.trim() || null,
       phone: data.phone?.trim() || null,
@@ -75,7 +75,7 @@ export const listBaseDrinks = createServerFn({ method: "POST" }).handler(async (
   const { admin, assertRegisterAccess } = await import("./fastbar.server");
   await assertRegisterAccess();
   const { data } = await admin()
-    .from("fastbar_base_drinks")
+    .from("pop9_fastbar_base_drinks")
     .select(
       "id, name, unit, current_stock, min_stock, average_cost, active, purchase_unit, units_per_pack, content_amount",
     )
@@ -109,7 +109,7 @@ export const createBaseDrink = createServerFn({ method: "POST" })
     // gesto de cadastrar — é assim que a compra acontece no bar: chega a mercadoria e se registra
     // o que chegou, não "cadastra agora e informa a quantidade depois".
     const { data: created, error } = await admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .insert({
         name,
         unit: data.unit,
@@ -146,7 +146,7 @@ export const updateBaseDrinkPackaging = createServerFn({ method: "POST" })
     const packaging = readPackaging(data);
     if (!packaging.ok) return packaging;
     const { error } = await admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .update({
         purchase_unit: data.purchaseUnit?.trim() || null,
         units_per_pack: packaging.unitsPerPack,
@@ -178,7 +178,7 @@ export const deleteBaseDrink = createServerFn({ method: "POST" })
     if (!teamPasswordMatches(data.password)) {
       return { ok: false as const, message: "Senha incorreta." };
     }
-    const { data: result, error } = await admin().rpc("fastbar_delete_base_drink", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_delete_base_drink", {
       p_id: data.id,
     });
     const parsed = result as { ok: boolean; code?: string } | null;
@@ -220,7 +220,7 @@ export const addBaseDrinkEntry = createServerFn({ method: "POST" })
     if (!cost.ok) return cost;
 
     const { data: material } = await admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .select("id, current_stock, average_cost, units_per_pack, content_amount")
       .eq("id", data.baseDrinkId)
       .maybeSingle();
@@ -232,7 +232,7 @@ export const addBaseDrinkEntry = createServerFn({ method: "POST" })
     }
     const unitCost = cost.purchaseCost !== null ? cost.purchaseCost / quantity : null;
 
-    const { error: movementError } = await admin().from("fastbar_base_drink_movements").insert({
+    const { error: movementError } = await admin().from("pop9_fastbar_base_drink_movements").insert({
       base_drink_id: material.id,
       type: "entrada",
       quantity,
@@ -255,7 +255,7 @@ export const addBaseDrinkEntry = createServerFn({ method: "POST" })
         : currentAvg;
 
     const { error: updateError } = await admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .update({ current_stock: newStock, average_cost: newAvg })
       .eq("id", material.id);
     if (updateError) {
@@ -283,7 +283,7 @@ export const addBaseDrinkLoss = createServerFn({ method: "POST" })
     }
 
     const { data: material } = await admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .select("id, current_stock, average_cost")
       .eq("id", data.baseDrinkId)
       .maybeSingle();
@@ -294,7 +294,7 @@ export const addBaseDrinkLoss = createServerFn({ method: "POST" })
       return { ok: false as const, message: "Quantidade maior do que o estoque atual." };
     }
 
-    const { error: movementError } = await admin().from("fastbar_base_drink_movements").insert({
+    const { error: movementError } = await admin().from("pop9_fastbar_base_drink_movements").insert({
       base_drink_id: material.id,
       type: "saida",
       quantity,
@@ -307,7 +307,7 @@ export const addBaseDrinkLoss = createServerFn({ method: "POST" })
     }
 
     const { error: updateError } = await admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .update({ current_stock: newStock })
       .eq("id", material.id);
     if (updateError) {
@@ -324,7 +324,7 @@ export const listIngredients = createServerFn({ method: "POST" }).handler(async 
   const { admin, assertRegisterAccess } = await import("./fastbar.server");
   await assertRegisterAccess();
   const { data } = await admin()
-    .from("fastbar_drink_ingredients")
+    .from("pop9_fastbar_drink_ingredients")
     .select(
       "id, name, unit, current_stock, min_stock, average_cost, active, purchase_unit, units_per_pack, content_amount",
     )
@@ -356,7 +356,7 @@ export const createIngredient = createServerFn({ method: "POST" })
     if (!packaging.ok) return packaging;
     // Mesmo motivo de createBaseDrink: o id volta para a tela dar a entrada em seguida.
     const { data: created, error } = await admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .insert({
         name,
         unit: data.unit,
@@ -389,7 +389,7 @@ export const updateIngredientPackaging = createServerFn({ method: "POST" })
     const packaging = readPackaging(data);
     if (!packaging.ok) return packaging;
     const { error } = await admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .update({
         purchase_unit: data.purchaseUnit?.trim() || null,
         units_per_pack: packaging.unitsPerPack,
@@ -410,7 +410,7 @@ export const deleteIngredient = createServerFn({ method: "POST" })
     if (!teamPasswordMatches(data.password)) {
       return { ok: false as const, message: "Senha incorreta." };
     }
-    const { data: result, error } = await admin().rpc("fastbar_delete_ingredient", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_delete_ingredient", {
       p_id: data.id,
     });
     const parsed = result as { ok: boolean; code?: string } | null;
@@ -451,7 +451,7 @@ export const addIngredientEntry = createServerFn({ method: "POST" })
     if (!cost.ok) return cost;
 
     const { data: ingredient } = await admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .select("id, current_stock, average_cost, units_per_pack, content_amount")
       .eq("id", data.ingredientId)
       .maybeSingle();
@@ -463,7 +463,7 @@ export const addIngredientEntry = createServerFn({ method: "POST" })
     }
     const unitCost = cost.purchaseCost !== null ? cost.purchaseCost / quantity : null;
 
-    const { error: movementError } = await admin().from("fastbar_drink_ingredient_movements").insert({
+    const { error: movementError } = await admin().from("pop9_fastbar_drink_ingredient_movements").insert({
       ingredient_id: ingredient.id,
       type: "entrada",
       quantity,
@@ -485,7 +485,7 @@ export const addIngredientEntry = createServerFn({ method: "POST" })
         : currentAvg;
 
     const { error: updateError } = await admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .update({ current_stock: newStock, average_cost: newAvg })
       .eq("id", ingredient.id);
     if (updateError) {
@@ -508,7 +508,7 @@ export const addIngredientLoss = createServerFn({ method: "POST" })
     }
 
     const { data: ingredient } = await admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .select("id, current_stock, average_cost")
       .eq("id", data.ingredientId)
       .maybeSingle();
@@ -519,7 +519,7 @@ export const addIngredientLoss = createServerFn({ method: "POST" })
       return { ok: false as const, message: "Quantidade maior do que o estoque atual." };
     }
 
-    const { error: movementError } = await admin().from("fastbar_drink_ingredient_movements").insert({
+    const { error: movementError } = await admin().from("pop9_fastbar_drink_ingredient_movements").insert({
       ingredient_id: ingredient.id,
       type: "saida",
       quantity,
@@ -532,7 +532,7 @@ export const addIngredientLoss = createServerFn({ method: "POST" })
     }
 
     const { error: updateError } = await admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .update({ current_stock: newStock })
       .eq("id", ingredient.id);
     if (updateError) {
@@ -548,7 +548,7 @@ export const listAllProducts = createServerFn({ method: "POST" }).handler(async 
   const { admin, assertRegisterAccess } = await import("./fastbar.server");
   await assertRegisterAccess();
   const { data } = await admin()
-    .from("fastbar_products")
+    .from("pop9_fastbar_products")
     .select("id, name, category, is_active")
     .order("category")
     .order("name");
@@ -564,7 +564,7 @@ export const listProductCategories = createServerFn({ method: "POST" }).handler(
   const { admin, assertRegisterAccess } = await import("./fastbar.server");
   await assertRegisterAccess();
   const { data, error } = await admin()
-    .from("fastbar_product_categories")
+    .from("pop9_fastbar_product_categories")
     .select("id, name")
     .order("name");
   // Falha de leitura não pode virar "lista vazia" — isso faria a tela mandar a equipe "criar uma
@@ -584,7 +584,7 @@ export const createProductCategory = createServerFn({ method: "POST" })
     const name = data.name.trim();
     if (name.length < 2) return { ok: false as const, message: "Digite um nome de categoria." };
 
-    const { error } = await admin().from("fastbar_product_categories").insert({ name });
+    const { error } = await admin().from("pop9_fastbar_product_categories").insert({ name });
     if (error) {
       // Nome único: categoria repetida (mesmo com maiúscula/minúscula diferente) cai aqui.
       if (error.code === "23505") {
@@ -605,7 +605,7 @@ export const deleteProductCategory = createServerFn({ method: "POST" })
     if (!teamPasswordMatches(data.password)) {
       return { ok: false as const, message: "Senha incorreta." };
     }
-    const { data: result, error } = await admin().rpc("fastbar_delete_product_category", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_delete_product_category", {
       p_id: data.id,
     });
     const parsed = result as { ok: boolean; code?: string; count?: number } | null;
@@ -629,7 +629,7 @@ export const updateProductCategory = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
-    const { data: result, error } = await admin().rpc("fastbar_update_product_category", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_update_product_category", {
       p_id: data.id,
       p_name: data.name,
     });
@@ -690,7 +690,7 @@ export const createProduct = createServerFn({ method: "POST" })
     // categoria (fastbar_create_product), pra fechar a mesma corrida já fechada nas exclusões:
     // sem isso, a categoria podia ser lida como existente aqui e apagada por outra aba entre a
     // leitura e o insert, deixando o produto com um nome de categoria que não existe mais.
-    const { data: result, error } = await admin().rpc("fastbar_create_product", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_create_product", {
       p_name: name,
       p_price: price,
       p_category: data.category.trim(),
@@ -723,7 +723,7 @@ async function removeProductPhotoIfUnused(
   imageUrl: string,
 ) {
   const { count } = await admin()
-    .from("fastbar_products")
+    .from("pop9_fastbar_products")
     .select("id", { count: "exact", head: true })
     .eq("image_url", imageUrl);
   if (count) return;
@@ -767,10 +767,10 @@ export const updateProduct = createServerFn({ method: "POST" })
 
     // Busca a foto atual antes de trocar: depois do UPDATE não tem mais como saber qual era.
     const { data: before } = changeImage
-      ? await admin().from("fastbar_products").select("image_url").eq("id", data.productId).maybeSingle()
+      ? await admin().from("pop9_fastbar_products").select("image_url").eq("id", data.productId).maybeSingle()
       : { data: null };
 
-    const { data: result, error } = await admin().rpc("fastbar_update_product", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_update_product", {
       p_id: data.productId,
       p_name: name,
       p_price: price,
@@ -837,7 +837,7 @@ export const getRecipeItems = createServerFn({ method: "POST" })
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
     const { data: items } = await admin()
-      .from("fastbar_recipe_items")
+      .from("pop9_fastbar_recipe_items")
       .select(
         "id, base_drink_id, ingredient_id, quantity, fastbar_base_drinks(name, unit), fastbar_drink_ingredients(name, unit)",
       )
@@ -876,10 +876,10 @@ export const setRecipeItems = createServerFn({ method: "POST" })
 
     const valid = data.items.filter((item) => Number(item.quantity) > 0);
 
-    await admin().from("fastbar_recipe_items").delete().eq("product_id", data.productId);
+    await admin().from("pop9_fastbar_recipe_items").delete().eq("product_id", data.productId);
 
     if (valid.length > 0) {
-      const { error } = await admin().from("fastbar_recipe_items").insert(
+      const { error } = await admin().from("pop9_fastbar_recipe_items").insert(
         valid.map((item) => ({
           product_id: data.productId,
           base_drink_id: item.type === "base_drink" ? item.baseDrinkId : null,
@@ -902,21 +902,21 @@ export const getBaseDrinksOverview = createServerFn({ method: "POST" }).handler(
 
   const [{ data: baseDrinks }, { data: ingredients }, { data: recipes }] = await Promise.all([
     admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .select(
         "id, name, unit, current_stock, min_stock, average_cost, purchase_unit, units_per_pack, content_amount",
       )
       .eq("active", true)
       .order("name"),
     admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .select(
         "id, name, unit, current_stock, min_stock, average_cost, purchase_unit, units_per_pack, content_amount",
       )
       .eq("active", true)
       .order("name"),
     admin()
-      .from("fastbar_recipe_items")
+      .from("pop9_fastbar_recipe_items")
       .select("product_id, base_drink_id, ingredient_id, quantity, fastbar_products(name)"),
   ]);
 
@@ -961,15 +961,15 @@ export const getStockReport = createServerFn({ method: "POST" }).handler(async (
 
   const [{ data: baseDrinks }, { data: ingredients }, { data: products }] = await Promise.all([
     admin()
-      .from("fastbar_base_drinks")
+      .from("pop9_fastbar_base_drinks")
       .select("id, name, unit, current_stock, min_stock, average_cost")
       .eq("active", true),
     admin()
-      .from("fastbar_drink_ingredients")
+      .from("pop9_fastbar_drink_ingredients")
       .select("id, name, unit, current_stock, min_stock, average_cost")
       .eq("active", true),
     admin()
-      .from("fastbar_products")
+      .from("pop9_fastbar_products")
       .select("id, name, category, stock_quantity, average_cost")
       .eq("is_active", true),
   ]);
@@ -1023,11 +1023,11 @@ export const getStockReport = createServerFn({ method: "POST" }).handler(async (
 
   const [{ data: baseDrinkLosses }, { data: ingredientLosses }] = await Promise.all([
     admin()
-      .from("fastbar_base_drink_movements")
+      .from("pop9_fastbar_base_drink_movements")
       .select("base_drink_id, quantity, unit_cost, created_at")
       .eq("reason", "perda"),
     admin()
-      .from("fastbar_drink_ingredient_movements")
+      .from("pop9_fastbar_drink_ingredient_movements")
       .select("ingredient_id, quantity, unit_cost, created_at")
       .eq("reason", "perda"),
   ]);

@@ -14,12 +14,12 @@ export const getCustomerTab = createServerFn({ method: "POST" })
     const { admin } = await import("./fastbar.server");
     const [{ data: session }, { data: items }] = await Promise.all([
       admin()
-        .from("fastbar_sessions")
+        .from("pop9_fastbar_sessions")
         .select(PUBLIC_SESSION_COLUMNS)
         .eq("id", data.sessionId)
         .maybeSingle(),
       admin()
-        .from("fastbar_tab_items")
+        .from("pop9_fastbar_tab_items")
         .select("id, session_id, product_id, name, unit_price, quantity, added_at")
         .eq("session_id", data.sessionId)
         .order("added_at"),
@@ -35,12 +35,12 @@ export const getRegisterTab = createServerFn({ method: "POST" })
     await assertRegisterAccess();
     const [{ data: session }, { data: items }] = await Promise.all([
       admin()
-        .from("fastbar_sessions")
+        .from("pop9_fastbar_sessions")
         .select(REGISTER_SESSION_COLUMNS)
         .eq("id", data.sessionId)
         .maybeSingle(),
       admin()
-        .from("fastbar_tab_items")
+        .from("pop9_fastbar_tab_items")
         .select("id, session_id, product_id, name, unit_price, quantity, added_at")
         .eq("session_id", data.sessionId)
         .order("added_at"),
@@ -53,13 +53,13 @@ export const getRegisterOverview = createServerFn({ method: "POST" }).handler(as
   await assertRegisterAccess();
   const [{ data: sessions }, { data: items }] = await Promise.all([
     admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select(REGISTER_SESSION_COLUMNS)
       .in("status", ["pending", "open", "closed", "paid", "cancelled"])
       .order("created_at", { ascending: false })
       .limit(200),
     admin()
-      .from("fastbar_tab_items")
+      .from("pop9_fastbar_tab_items")
       .select("id, session_id, name, unit_price, quantity, added_at")
       .order("added_at"),
   ]);

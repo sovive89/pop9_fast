@@ -1,6 +1,10 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/caixa/crm")({
+  // Pop9 é gestão de food truck — sem CRM. Redireciona a rota e as 4 subrotas de uma vez.
+  beforeLoad: () => {
+    throw redirect({ to: "/caixa" });
+  },
   head: () => ({
     meta: [{ title: "CRM | FastBar" }],
   }),

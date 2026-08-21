@@ -25,9 +25,7 @@ function RegisterLayout() {
     ? "cardapio"
     : pathname.startsWith("/caixa/estoque")
       ? "estoque"
-      : pathname.startsWith("/caixa/crm")
-        ? "crm"
-        : pathname.startsWith("/caixa/relatorios")
+      : pathname.startsWith("/caixa/relatorios")
           ? "relatorios"
           : pathname.startsWith("/caixa/alertas")
             ? "alertas"
@@ -48,9 +46,6 @@ function RegisterLayout() {
           </Link>
           <Link to="/caixa/estoque" className={tabClass("estoque")}>
             Estoque
-          </Link>
-          <Link to="/caixa/crm" className={tabClass("crm")}>
-            CRM
           </Link>
           <Link to="/caixa/relatorios" className={tabClass("relatorios")}>
             Relatórios Vendas

@@ -55,7 +55,7 @@ export const confirmSession = createServerFn({ method: "POST" })
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
     const { error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .update({ status: "open", started_at: new Date().toISOString() })
       .eq("id", data.sessionId)
       .eq("status", "pending");
@@ -91,7 +91,7 @@ export const openSessionByTeam = createServerFn({ method: "POST" })
     // Mesma regra do fluxo do QR: celular que já tem comanda em andamento volta pra ela, em vez de
     // abrir uma segunda comanda pro mesmo cliente e dividir o consumo em duas contas.
     const { data: existing } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("id")
       .eq("phone", phone)
       .in("status", ["pending", "open"])
@@ -104,7 +104,7 @@ export const openSessionByTeam = createServerFn({ method: "POST" })
 
     const customerId = await upsertCustomer(name, phone);
     const { data: inserted, error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .insert({
         customer_name: name,
         phone,
@@ -158,7 +158,7 @@ export const openWalkInSession = createServerFn({ method: "POST" })
     const dayStartIso = new Date(`${localDate}T00:00:00-03:00`).toISOString();
 
     const { data: existing } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("id")
       .eq("phone", "")
       .eq("status", "open")
@@ -174,7 +174,7 @@ export const openWalkInSession = createServerFn({ method: "POST" })
     // seriam dezenas de linhas idênticas sem como saber de que dia é cada uma.
     const [year, month, day] = localDate.split("-");
     const { data: inserted, error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .insert({
         customer_name: `Comanda Balcão ${day}/${month}/${year}`,
         phone: "",
@@ -196,7 +196,7 @@ export const addTabItem = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
-    const { data: result, error } = await admin().rpc("fastbar_add_tab_item", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_add_tab_item", {
       p_session_id: data.sessionId,
       p_product_id: data.productId,
     });
@@ -220,7 +220,7 @@ export const removeTabItem = createServerFn({ method: "POST" })
     if (!teamPasswordMatches(data.password)) {
       return { ok: false as const, message: "Senha incorreta." };
     }
-    const { data: result, error } = await admin().rpc("fastbar_remove_tab_item", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_remove_tab_item", {
       p_item_id: data.itemId,
     });
     return fromRpc(result as RpcResult | null, error, "Não foi possível remover o item.");
@@ -240,7 +240,7 @@ export const undoLastTabItem = createServerFn({ method: "POST" })
     if (!teamPasswordMatches(data.password)) {
       return { ok: false as const, message: "Senha incorreta." };
     }
-    const { data: result, error } = await admin().rpc("fastbar_undo_last_tab_item", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_undo_last_tab_item", {
       p_session_id: data.sessionId,
     });
     return fromRpc(result as RpcResult | null, error, "Não foi possível desfazer o lançamento.");
@@ -259,7 +259,7 @@ export const clearTabItems = createServerFn({ method: "POST" })
     if (!teamPasswordMatches(data.password)) {
       return { ok: false as const, message: "Senha incorreta." };
     }
-    const { data: result, error } = await admin().rpc("fastbar_clear_tab_items", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_clear_tab_items", {
       p_session_id: data.sessionId,
     });
     return fromRpc(result as RpcResult | null, error, "Não foi possível zerar a comanda.");
@@ -280,7 +280,7 @@ export const cancelSession = createServerFn({ method: "POST" })
     if (!teamPasswordMatches(data.password)) {
       return { ok: false as const, message: "Senha incorreta." };
     }
-    const { data: result, error } = await admin().rpc("fastbar_cancel_session", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_cancel_session", {
       p_session_id: data.sessionId,
     });
     return fromRpc(result as RpcResult | null, error, "Não foi possível cancelar a comanda.");
@@ -297,7 +297,7 @@ export const archiveSession = createServerFn({ method: "POST" })
     await assertRegisterAccess();
 
     const { data: session } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("id, status")
       .eq("id", data.sessionId)
       .maybeSingle();
@@ -307,7 +307,7 @@ export const archiveSession = createServerFn({ method: "POST" })
     }
 
     const { error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .update({ archived_at: new Date().toISOString() })
       .eq("id", session.id);
     if (error) return { ok: false as const, message: "Não foi possível arquivar a comanda." };
@@ -320,7 +320,7 @@ export const closeSession = createServerFn({ method: "POST" })
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
     const { error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .update({ status: "closed", closed_at: new Date().toISOString() })
       .eq("id", data.sessionId)
       .eq("status", "open");
@@ -343,7 +343,7 @@ export const registerPayment = createServerFn({ method: "POST" })
     }
     const nowIso = new Date().toISOString();
     const { data: session } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("id, status, closed_at")
       .eq("id", data.sessionId)
       .maybeSingle();
@@ -358,7 +358,7 @@ export const registerPayment = createServerFn({ method: "POST" })
       return { ok: false as const, message: "Comanda cancelada não pode receber pagamento." };
     }
     const { data: updated, error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .update({
         status: "paid",
         closed_at: session.closed_at ?? nowIso,
@@ -388,7 +388,7 @@ export const archiveClosedSessions = createServerFn({ method: "POST" })
     await assertRegisterAccess();
 
     let query = admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("id")
       .in("status", ["closed", "paid", "cancelled"])
       .is("archived_at", null);
@@ -399,7 +399,7 @@ export const archiveClosedSessions = createServerFn({ method: "POST" })
 
     const ids = sessions.map((session) => session.id);
     const { error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .update({ archived_at: new Date().toISOString() })
       .in("id", ids);
     if (error) return { ok: false as const, message: "Não foi possível limpar a lista." };
@@ -413,7 +413,7 @@ export const unarchiveSession = createServerFn({ method: "POST" })
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
     const { error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .update({ archived_at: null })
       .eq("id", data.sessionId);
     if (error) return { ok: false as const, message: "Não foi possível restaurar a comanda." };
@@ -435,7 +435,7 @@ export const deactivateProduct = createServerFn({ method: "POST" })
       return { ok: false as const, message: "Senha incorreta." };
     }
     const { error } = await admin()
-      .from("fastbar_products")
+      .from("pop9_fastbar_products")
       .update({ is_active: false })
       .eq("id", data.productId);
     if (error) return { ok: false as const, message: "Não foi possível remover o produto." };
@@ -461,12 +461,12 @@ export const deleteProduct = createServerFn({ method: "POST" })
     // Busca a foto antes de apagar a linha: depois de apagada não tem mais como saber qual
     // arquivo era dela. O Postgres não mexe em Storage, então essa parte só pode rodar aqui.
     const { data: before } = await admin()
-      .from("fastbar_products")
+      .from("pop9_fastbar_products")
       .select("image_url")
       .eq("id", data.productId)
       .maybeSingle();
 
-    const { data: result, error } = await admin().rpc("fastbar_delete_product", {
+    const { data: result, error } = await admin().rpc("pop9_fastbar_delete_product", {
       p_product_id: data.productId,
     });
     const parsed = fromRpc(result as RpcResult | null, error, "Não foi possível apagar o produto.");
@@ -479,7 +479,7 @@ export const deleteProduct = createServerFn({ method: "POST" })
     // produto ainda referencia essa mesma foto (evita apagar um arquivo reaproveitado/reutilizado).
     if (before?.image_url) {
       const { count } = await admin()
-        .from("fastbar_products")
+        .from("pop9_fastbar_products")
         .select("id", { count: "exact", head: true })
         .eq("image_url", before.image_url);
       if (!count) {
@@ -505,7 +505,7 @@ export const reopenSession = createServerFn({ method: "POST" })
     // cujo estoque já voltou — e de lá ela poderia ser paga, entrando no faturamento. A condição
     // vai no próprio UPDATE para não abrir janela entre a checagem e a gravação.
     const { data: updated, error } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .update({ status: "open", closed_at: null, paid_at: null })
       .eq("id", data.sessionId)
       .neq("status", "cancelled")
@@ -515,7 +515,7 @@ export const reopenSession = createServerFn({ method: "POST" })
       // Zero linhas tanto significa "estava cancelada" quanto "não existe" — sem distinguir,
       // um id errado acusaria cancelamento e mandaria procurar um problema que não existe.
       const { data: exists } = await admin()
-        .from("fastbar_sessions")
+        .from("pop9_fastbar_sessions")
         .select("id")
         .eq("id", data.sessionId)
         .maybeSingle();

@@ -1,7 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { OpenTabForm } from "@/features/client/components/OpenTabForm";
 
 export const Route = createFileRoute("/abrir")({
+  // Pop9 não tem autoatendimento por QR code — a comanda é aberta pela equipe, no caixa.
+  beforeLoad: () => {
+    throw redirect({ to: "/equipe" });
+  },
   head: () => ({
     meta: [
       { title: "Abrir comanda | FastBar" },

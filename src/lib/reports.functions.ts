@@ -20,7 +20,7 @@ export const getReportsOverview = createServerFn({ method: "POST" })
     await assertRegisterAccess();
 
     const { data: sessions } = await admin()
-      .from("fastbar_sessions")
+      .from("pop9_fastbar_sessions")
       .select("id, paid_at, payment_method, customer_id, discount_percent")
       .eq("status", "paid")
       .gte("paid_at", data.from)
@@ -37,12 +37,12 @@ export const getReportsOverview = createServerFn({ method: "POST" })
     const [{ data: items }, { data: products }, { data: recipeItems }] = await Promise.all([
       sessionIds.length
         ? admin()
-            .from("fastbar_tab_items")
+            .from("pop9_fastbar_tab_items")
             .select("session_id, product_id, name, unit_price, quantity, added_at")
             .in("session_id", sessionIds)
         : Promise.resolve({ data: [] as never[] }),
-      admin().from("fastbar_products").select("id, category, average_cost"),
-      admin().from("fastbar_recipe_items").select("product_id, base_drink_id, ingredient_id, quantity"),
+      admin().from("pop9_fastbar_products").select("id, category, average_cost"),
+      admin().from("pop9_fastbar_recipe_items").select("product_id, base_drink_id, ingredient_id, quantity"),
     ]);
 
     // Custo dos insumos, pra fechar o CMV de item com ficha técnica: nesses, o custo não está no
@@ -50,8 +50,8 @@ export const getReportsOverview = createServerFn({ method: "POST" })
     const usesComponents = (recipeItems ?? []).length > 0;
     const [{ data: baseDrinks }, { data: ingredients }] = usesComponents
       ? await Promise.all([
-          admin().from("fastbar_base_drinks").select("id, average_cost"),
-          admin().from("fastbar_drink_ingredients").select("id, average_cost"),
+          admin().from("pop9_fastbar_base_drinks").select("id, average_cost"),
+          admin().from("pop9_fastbar_drink_ingredients").select("id, average_cost"),
         ])
       : [{ data: [] as never[] }, { data: [] as never[] }];
 
@@ -210,7 +210,7 @@ export const getReportsOverview = createServerFn({ method: "POST" })
     );
     const { data: periodCustomers } = customerIds.length
       ? await admin()
-          .from("fastbar_customers")
+          .from("pop9_fastbar_customers")
           .select("id, first_seen_at")
           .in("id", customerIds)
       : { data: [] as never[] };
@@ -241,7 +241,7 @@ export const getReportsOverview = createServerFn({ method: "POST" })
     }
 
     const { data: allCustomers } = await admin()
-      .from("fastbar_customers")
+      .from("pop9_fastbar_customers")
       .select("id, total_visits, total_spent, last_seen_at");
     const threshold = vipSpendThreshold(allCustomers ?? []);
     const segmentCounts: Record<string, number> = {};

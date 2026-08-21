@@ -1,12 +1,12 @@
 {
-  "name": "FastBar — Equipe",
-  "short_name": "FastBar Equipe",
-  "description": "PWA da equipe do FastBar para caixa, comandas, estoque e operação.",
+  "name": "Pop9 Fast — Equipe",
+  "short_name": "Pop9 Fast",
+  "description": "PWA da equipe do Pop9 Fast para caixa, estoque, produção e operação.",
   "start_url": "/equipe",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#151210",
-  "theme_color": "#151210",
+  "background_color": "#0a080c",
+  "theme_color": "#0a080c",
   "icons": [
     {
       "src": "/icons/icon-192.png",

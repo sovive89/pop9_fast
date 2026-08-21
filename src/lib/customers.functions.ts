@@ -5,7 +5,7 @@ export const getCustomersOverview = createServerFn({ method: "POST" }).handler(a
   const { classifyLead, vipSpendThreshold, averageTicket, daysSince } = await import("./crm");
   await assertRegisterAccess();
   const { data: customers } = await admin()
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .select("id, name, phone, total_visits, total_spent, first_seen_at, last_seen_at")
     .order("total_spent", { ascending: false });
 
@@ -37,7 +37,7 @@ export const getCrmDashboard = createServerFn({ method: "POST" }).handler(async 
   await assertRegisterAccess();
 
   const { data: customers } = await admin()
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .select(
       "id, name, total_visits, total_spent, last_seen_at, birthday_day, birthday_month, how_found_out, marketing_opt_in",
     );
@@ -92,7 +92,7 @@ export const getCrmAlerts = createServerFn({ method: "POST" }).handler(async () 
   await assertRegisterAccess();
 
   const { data: customers } = await admin()
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .select("id, name, phone, total_visits, total_spent, last_seen_at, birthday_day, birthday_month");
   const rows = customers ?? [];
   const threshold = vipSpendThreshold(rows);
@@ -128,10 +128,10 @@ export const getRetentionCohorts = createServerFn({ method: "POST" }).handler(as
   await assertRegisterAccess();
 
   const { data: customers } = await admin()
-    .from("fastbar_customers")
+    .from("pop9_fastbar_customers")
     .select("id, first_seen_at");
   const { data: sessions } = await admin()
-    .from("fastbar_sessions")
+    .from("pop9_fastbar_sessions")
     .select("customer_id, paid_at")
     .eq("status", "paid")
     .not("customer_id", "is", null);
@@ -188,9 +188,9 @@ export const getCustomerDetail = createServerFn({ method: "POST" })
     await assertRegisterAccess();
 
     const [{ data: customer }, { data: sessions }] = await Promise.all([
-      admin().from("fastbar_customers").select("*").eq("id", data.customerId).maybeSingle(),
+      admin().from("pop9_fastbar_customers").select("*").eq("id", data.customerId).maybeSingle(),
       admin()
-        .from("fastbar_sessions")
+        .from("pop9_fastbar_sessions")
         .select("id, status, started_at, closed_at, paid_at, payment_method")
         .eq("customer_id", data.customerId)
         .order("created_at", { ascending: false })
@@ -201,11 +201,11 @@ export const getCustomerDetail = createServerFn({ method: "POST" })
     const [{ data: items }, { data: products }] = await Promise.all([
       sessionIds.length
         ? admin()
-            .from("fastbar_tab_items")
+            .from("pop9_fastbar_tab_items")
             .select("session_id, product_id, name, unit_price, quantity, added_at")
             .in("session_id", sessionIds)
         : Promise.resolve({ data: [] as never[] }),
-      admin().from("fastbar_products").select("id, category"),
+      admin().from("pop9_fastbar_products").select("id, category"),
     ]);
     const categoryByProductId = new Map((products ?? []).map((p) => [p.id, p.category]));
 
@@ -280,7 +280,7 @@ export const getCustomerDetail = createServerFn({ method: "POST" })
     // consultar todos os clientes — senão o mesmo cliente apareceria com um segmento aqui e outro
     // na lista, ou uma fatia calculada contra o número errado.
     const { data: allCustomers } = await admin()
-      .from("fastbar_customers")
+      .from("pop9_fastbar_customers")
       .select("total_spent");
     const threshold = vipSpendThreshold(allCustomers ?? []);
     const totalBaseSpend = (allCustomers ?? []).reduce((sum, c) => sum + Number(c.total_spent), 0);
@@ -308,7 +308,7 @@ export const updateCustomerNotes = createServerFn({ method: "POST" })
     const { admin, assertRegisterAccess } = await import("./fastbar.server");
     await assertRegisterAccess();
     const { error } = await admin()
-      .from("fastbar_customers")
+      .from("pop9_fastbar_customers")
       .update({ notes: data.notes })
       .eq("id", data.customerId);
     if (error) return { ok: false as const, message: "Não foi possível salvar a nota." };
