@@ -5,6 +5,18 @@ import { PasswordConfirm } from "@/components/shared/PasswordConfirm";
 import { PrimaryButton, SectionCard, TextField } from "@/components/stock/SharedFormFields";
 import { brl, parseAmount } from "@/lib/format";
 import {
+  createEmbalagem,
+  createItem,
+  deleteEmbalagem,
+  deleteItem,
+  listEmbalagens,
+  listItems,
+  listUnidades,
+  TIPO_LABELS,
+  updateItem,
+  type ItemTipo,
+} from "@/lib/stock-items.functions";
+import {
   addBaseDrinkEntry,
   addBaseDrinkLoss,
   addIngredientEntry,
@@ -37,9 +49,10 @@ export const Route = createFileRoute("/caixa/estoque")({
   component: StockOverview,
 });
 
-type Tab = "bebidas" | "ingredientes" | "fornecedores" | "fichas" | "relatorios";
+type Tab = "itens" | "bebidas" | "ingredientes" | "fornecedores" | "fichas" | "relatorios";
 
 const TABS: Array<{ id: Tab; label: string }> = [
+  { id: "itens", label: "Itens" },
   { id: "bebidas", label: "Bebidas base" },
   { id: "ingredientes", label: "Ingredientes" },
   { id: "fornecedores", label: "Fornecedores" },
@@ -48,13 +61,13 @@ const TABS: Array<{ id: Tab; label: string }> = [
 ];
 
 function StockOverview() {
-  const [tab, setTab] = useState<Tab>("bebidas");
+  const [tab, setTab] = useState<Tab>("itens");
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Estoque</p>
-        <h1 className="mt-1 text-3xl font-bold">Gestão do bar</h1>
+        <h1 className="mt-1 text-3xl font-bold">Insumos e produção</h1>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -74,6 +87,7 @@ function StockOverview() {
       </div>
 
       <div className="mt-6">
+        {tab === "itens" && <ItensTab />}
         {tab === "bebidas" && <BebidasBaseTab />}
         {tab === "ingredientes" && <IngredientesTab />}
         {tab === "fornecedores" && <FornecedoresTab />}
@@ -81,6 +95,359 @@ function StockOverview() {
         {tab === "relatorios" && <RelatoriosTab />}
       </div>
     </main>
+  );
+}
+
+// ============================================================
+// Aba: Itens (modelo unificado -- substitui Bebidas base + Ingredientes)
+// ============================================================
+
+type Unidade = { id: string; codigo: string; nome: string; dimensao: string };
+
+type ItemRow = {
+  id: string;
+  nome: string;
+  tipo: ItemTipo;
+  estoque_atual: number;
+  estoque_minimo: number;
+  custo_medio: number;
+  ativo: boolean;
+  unidade_estoque_id: string;
+  pop9_fastbar_unidades: { codigo: string; nome: string } | null;
+};
+
+type Embalagem = {
+  id: string;
+  nome: string;
+  quantidade_por_embalagem: number;
+  padrao: boolean;
+  ativo: boolean;
+  pop9_fastbar_unidades: { codigo: string; nome: string } | null;
+};
+
+function ItensTab() {
+  const [items, setItems] = useState<ItemRow[]>([]);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [filtro, setFiltro] = useState<ItemTipo | "todos">("todos");
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<ItemTipo>("insumo");
+  const [unidadeId, setUnidadeId] = useState("");
+  const [estoqueMinimo, setEstoqueMinimo] = useState("0");
+
+  const loadItems = useServerFn(listItems);
+  const loadUnidades = useServerFn(listUnidades);
+  const createFn = useServerFn(createItem);
+  const updateFn = useServerFn(updateItem);
+  const deleteFn = useServerFn(deleteItem);
+
+  async function reload() {
+    const { items: rows } = await loadItems({ data: filtro === "todos" ? undefined : { tipo: filtro } });
+    setItems(rows as ItemRow[]);
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([reload(), loadUnidades().then((r) => setUnidades(r.unidades))]).finally(() =>
+      setLoading(false),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtro]);
+
+  useEffect(() => {
+    if (!unidadeId && unidades.length > 0) setUnidadeId(unidades[0]!.id);
+  }, [unidades, unidadeId]);
+
+  async function handleCreate() {
+    setError(null);
+    const estoqueMinimoNum = parseAmount(estoqueMinimo) ?? 0;
+    const result = await createFn({
+      data: { nome, tipo, unidadeEstoqueId: unidadeId, estoqueMinimo: estoqueMinimoNum },
+    });
+    if (!result.ok) {
+      setError(result.message ?? "Não foi possível criar o item.");
+      return;
+    }
+    setNome("");
+    setEstoqueMinimo("0");
+    setCreating(false);
+    await reload();
+  }
+
+  async function handleDelete(id: string) {
+    const result = await deleteFn({ data: { id } });
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    await reload();
+  }
+
+  if (loading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {(["todos", ...Object.keys(TIPO_LABELS)] as Array<ItemTipo | "todos">).map((t) => (
+          <button
+            key={t}
+            onClick={() => setFiltro(t)}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              filtro === t
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            {t === "todos" ? "Todos" : TIPO_LABELS[t]}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      <PrimaryButton onClick={() => setCreating((v) => !v)}>
+        {creating ? "Cancelar" : "+ Novo item"}
+      </PrimaryButton>
+
+      {creating && (
+        <SectionCard title="Novo item">
+          <div className="space-y-3">
+            <TextField label="Nome" value={nome} onChange={setNome} placeholder="Ex.: Molho barbecue" />
+            <label className="block">
+              <span className="text-xs font-medium text-muted-foreground">Tipo</span>
+              <select
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value as ItemTipo)}
+                className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm outline-none focus:border-ring"
+              >
+                {Object.entries(TIPO_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-muted-foreground">Unidade de estoque</span>
+              <select
+                value={unidadeId}
+                onChange={(e) => setUnidadeId(e.target.value)}
+                className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm outline-none focus:border-ring"
+              >
+                {unidades.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.nome} ({u.codigo})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <TextField
+              label="Estoque mínimo (alerta)"
+              value={estoqueMinimo}
+              onChange={setEstoqueMinimo}
+              type="number"
+            />
+            <PrimaryButton onClick={() => void handleCreate()} disabled={nome.trim().length < 2}>
+              Salvar
+            </PrimaryButton>
+          </div>
+        </SectionCard>
+      )}
+
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum item cadastrado.</p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((item) => (
+            <li key={item.id} className="rounded-2xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{item.nome}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {TIPO_LABELS[item.tipo]} ·{" "}
+                    <span
+                      className={
+                        item.estoque_atual <= item.estoque_minimo ? "font-semibold text-destructive" : ""
+                      }
+                    >
+                      {item.estoque_atual} {item.pop9_fastbar_unidades?.codigo}
+                    </span>{" "}
+                    em estoque
+                  </p>
+                </div>
+                <button
+                  onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                  className="shrink-0 text-xs text-muted-foreground underline"
+                >
+                  {expandedId === item.id ? "Fechar" : "Embalagens"}
+                </button>
+              </div>
+
+              {expandedId === item.id && (
+                <div className="mt-3 space-y-3 border-t border-border pt-3">
+                  <EmbalagensManager itemId={item.id} unidades={unidades} />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() =>
+                        void updateFn({
+                          data: {
+                            id: item.id,
+                            nome: item.nome,
+                            tipo: item.tipo,
+                            estoqueMinimo: item.estoque_minimo,
+                            ativo: false,
+                          },
+                        }).then(reload)
+                      }
+                      className="text-xs text-muted-foreground underline"
+                    >
+                      Desativar
+                    </button>
+                    <button
+                      onClick={() => void handleDelete(item.id)}
+                      className="text-xs text-destructive underline"
+                    >
+                      Apagar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function EmbalagensManager(props: { itemId: string; unidades: Unidade[] }) {
+  const [embalagens, setEmbalagens] = useState<Embalagem[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [nome, setNome] = useState("");
+  const [quantidade, setQuantidade] = useState("");
+  const [unidadeConteudoId, setUnidadeConteudoId] = useState("");
+  const [padrao, setPadrao] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadFn = useServerFn(listEmbalagens);
+  const createFn = useServerFn(createEmbalagem);
+  const deleteFn = useServerFn(deleteEmbalagem);
+
+  async function reload() {
+    const { embalagens: rows } = await loadFn({ data: { itemId: props.itemId } });
+    setEmbalagens(rows as Embalagem[]);
+  }
+
+  useEffect(() => {
+    void reload();
+    if (!unidadeConteudoId && props.unidades.length > 0) setUnidadeConteudoId(props.unidades[0]!.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.itemId]);
+
+  async function handleCreate() {
+    setError(null);
+    const qty = parseAmount(quantidade);
+    if (!qty) {
+      setError("Quantidade inválida.");
+      return;
+    }
+    const result = await createFn({
+      data: {
+        itemId: props.itemId,
+        nome,
+        quantidadePorEmbalagem: qty,
+        unidadeConteudoId,
+        padrao,
+      },
+    });
+    if (!result.ok) {
+      setError(result.message ?? "Não foi possível salvar.");
+      return;
+    }
+    setNome("");
+    setQuantidade("");
+    setPadrao(false);
+    setAdding(false);
+    await reload();
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground">
+        Como você compra ("caixa com 12", "garrafa de 1000ml"...)
+      </p>
+      {embalagens.length === 0 ? (
+        <p className="mt-1 text-xs text-muted-foreground">Nenhuma embalagem cadastrada.</p>
+      ) : (
+        <ul className="mt-2 space-y-1">
+          {embalagens.map((e) => (
+            <li key={e.id} className="flex items-center justify-between text-xs">
+              <span>
+                {e.nome} — {e.quantidade_por_embalagem} {e.pop9_fastbar_unidades?.codigo}
+                {e.padrao && <span className="ml-1 text-primary">(padrão)</span>}
+              </span>
+              <button
+                onClick={() => void deleteFn({ data: { id: e.id } }).then(reload)}
+                className="text-muted-foreground underline"
+              >
+                remover
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+
+      {adding ? (
+        <div className="mt-3 space-y-2 rounded-xl border border-border p-3">
+          <TextField label="Nome da embalagem" value={nome} onChange={setNome} placeholder="Ex.: Caixa" />
+          <div className="flex gap-2">
+            <TextField
+              label="Rende quanto"
+              value={quantidade}
+              onChange={setQuantidade}
+              type="number"
+              placeholder="1000"
+            />
+            <label className="block">
+              <span className="text-xs font-medium text-muted-foreground">Unidade</span>
+              <select
+                value={unidadeConteudoId}
+                onChange={(e) => setUnidadeConteudoId(e.target.value)}
+                className="mt-1 h-11 rounded-xl border border-border bg-background px-3.5 text-sm outline-none focus:border-ring"
+              >
+                {props.unidades.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.codigo}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={padrao} onChange={(e) => setPadrao(e.target.checked)} />
+            Definir como padrão
+          </label>
+          <div className="flex gap-2">
+            <PrimaryButton onClick={() => void handleCreate()} disabled={nome.trim().length < 2}>
+              Salvar
+            </PrimaryButton>
+            <button onClick={() => setAdding(false)} className="text-xs text-muted-foreground underline">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setAdding(true)} className="mt-2 text-xs text-primary underline">
+          + Adicionar embalagem
+        </button>
+      )}
+    </div>
   );
 }
 
