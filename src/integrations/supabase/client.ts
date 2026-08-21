@@ -32,9 +32,15 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+  //
+  // Precisa ser acesso por ponto (`import.meta.env.VITE_X`), não por colchete
+  // (`import.meta.env["VITE_X"]`): o Vite só embute a variável no bundle de
+  // produção quando enxerga a notação de ponto em algum lugar do código — com
+  // colchete, a substituição nunca acontece e o valor fica `undefined` mesmo
+  // com a variável configurada certinho na Vercel.
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env["SUPABASE_URL"];
   const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env["SUPABASE_PUBLISHABLE_KEY"];
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
