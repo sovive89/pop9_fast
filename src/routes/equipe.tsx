@@ -26,6 +26,7 @@ function StaffUnlock() {
   const unlock = useServerFn(unlockBarPanel);
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -33,13 +34,21 @@ function StaffUnlock() {
     if (busy) return;
     setBusy(true);
     setError(false);
-    const { ok } = await unlock({ data: { password } });
-    if (ok) {
-      await navigate({ to: "/caixa", replace: true });
-      return;
+    setServerError(null);
+    // Sem isso, uma exceção do servidor (ex.: variável de ambiente ausente) deixa o
+    // botão preso em "Verificando..." pra sempre — a promise rejeita e nada reseta o estado.
+    try {
+      const { ok } = await unlock({ data: { password } });
+      if (ok) {
+        await navigate({ to: "/caixa", replace: true });
+        return;
+      }
+      setError(true);
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : "Erro inesperado no servidor.");
+    } finally {
+      setBusy(false);
     }
-    setError(true);
-    setBusy(false);
   }
 
   return (
@@ -61,6 +70,9 @@ function StaffUnlock() {
           className="h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none placeholder:text-muted-foreground focus:border-ring"
         />
         {error && <p className="text-sm text-destructive">Senha incorreta.</p>}
+        {serverError && (
+          <p className="text-sm text-destructive">Erro no servidor: {serverError}</p>
+        )}
         <button
           type="submit"
           disabled={busy || password.length === 0}
